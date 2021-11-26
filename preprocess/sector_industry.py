@@ -18,25 +18,25 @@ class SectorPreprocessor:
         selected_tickers = np.genfromtxt(
             os.path.join(self.data_path, '..', selected_tickers_fname),
             dtype=str, delimiter='\t', skip_header=False
-        )
+        ) # 从数据path得到..退出到新的一层得到需要的股票信息; np.genfromtxt 能支持多种filename 形式,甚至是gzip和bz2两种压缩的形式
         print('#tickers selected:', len(selected_tickers))
         ticker_index = {}
         for index, ticker in enumerate(selected_tickers):
-            ticker_index[ticker] = index
-        with open(industry_ticker_file, 'r') as fin:
+            ticker_index[ticker] = index # ticker id编号
+        with open(industry_ticker_file, 'r') as fin: # industry 信息--> predefined
             industry_tickers = json.load(fin)
         print('#industries: ', len(industry_tickers))
         valid_industry_count = 0
         valid_industry_index = {}
-        for industry in industry_tickers.keys():
-            if len(industry_tickers[industry]) > 1:
+        for industry in industry_tickers.keys(): # 给tiker 不只一个的industry 进行编号
+            if len(industry_tickers[industry]) > 1: # 过滤只有一个股票的产业--> 因为这样没有关系信息
                 valid_industry_index[industry] = valid_industry_count
                 valid_industry_count += 1
         one_hot_industry_embedding = np.identity(valid_industry_count + 1,
-                                                 dtype=int)
+                                                 dtype=int) # todo 为什么有多一个embedding
         ticker_relation_embedding = np.zeros(
             [len(selected_tickers), len(selected_tickers),
-             valid_industry_count + 1], dtype=int)
+             valid_industry_count + 1], dtype=int) #　3D Tensor, n_tikers* n_tikers 然后有n_valid_industry 个这样的图的邻接矩阵
         print(ticker_relation_embedding[0][0].shape)
         for industry in valid_industry_index.keys():
             cur_ind_tickers = industry_tickers[industry]
@@ -45,11 +45,13 @@ class SectorPreprocessor:
                 continue
             ind_ind = valid_industry_index[industry]
             for i in range(len(cur_ind_tickers)):
+                # tiker自己的就是设置为对角位置的embedding 但是多了的是最后一维用1标记了
                 left_tic_ind = ticker_index[cur_ind_tickers[i]]
                 ticker_relation_embedding[left_tic_ind][left_tic_ind] = \
                     copy.copy(one_hot_industry_embedding[ind_ind])
-                ticker_relation_embedding[left_tic_ind][left_tic_ind][-1] = 1
-                for j in range(i + 1, len(cur_ind_tickers)):
+                ticker_relation_embedding[left_tic_ind][left_tic_ind][-1] = 1 # 最后一维访问的是idx=96 的位置
+
+                for j in range(i + 1, len(cur_ind_tickers)): # 这样只用处理一个三角阵
                     right_tic_ind = ticker_index[cur_ind_tickers[j]]
                     ticker_relation_embedding[left_tic_ind][right_tic_ind] = \
                         copy.copy(one_hot_industry_embedding[ind_ind])
@@ -59,7 +61,7 @@ class SectorPreprocessor:
 
         # handle shit industry and n/a tickers
         for i in range(len(selected_tickers)):
-            ticker_relation_embedding[i][i][-1] = 1
+            ticker_relation_embedding[i][i][-1] = 1 # 和对角阵一样说明是单个relation ???
         print(ticker_relation_embedding.shape)
         np.save(self.market_name + '_industry_relation',
                 ticker_relation_embedding)

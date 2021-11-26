@@ -68,11 +68,12 @@ def build_wiki_relation(market_name, connection_file, tic_wiki_file,
 
 # single thread version
 if __name__ == '__main__':
+    import os
     path = '../data/relation/wikidata/'
-    # build_wiki_relation('NASDAQ',
-    #                     os.path.join(path, 'NASDAQ_connections.json'),
-    #                     os.path.join(path, 'NASDAQ_wiki.csv'),
-    #                     os.path.join(path, 'selected_wiki_connections.csv'))
+    build_wiki_relation('NASDAQ',
+                        os.path.join(path, 'NASDAQ_connections.json'),
+                        os.path.join(path,'../NASDAQ_wiki.csv'),
+                        os.path.join(path, 'selected_wiki_connections.csv'))
     # print('----------')
     # build_wiki_relation('NYSE',
     #                     os.path.join(path, 'NYSE_connections.json'),

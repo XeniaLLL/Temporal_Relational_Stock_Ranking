@@ -32,14 +32,20 @@ class EOD_Preprocessor:
                                      skip_header=True)[:, 0]
 
     def _transfer_EOD_str(self, selected_EOD_str, tra_date_index):
+        '''
+
+        :param selected_EOD_str:
+        :param tra_date_index:
+        :return: #转化了时间和价格特征信息的矩阵
+        '''
         selected_EOD = np.zeros(selected_EOD_str.shape, dtype=float)
         for row, daily_EOD in enumerate(selected_EOD_str):
             date_str = daily_EOD[0].replace('-05:00', '')
             date_str = date_str.replace('-04:00', '')
-            selected_EOD[row][0] = tra_date_index[date_str]
+            selected_EOD[row][0] = tra_date_index[date_str] # 获取时间的index作为col=0的值
             for col in range(1, selected_EOD_str.shape[1]):
-                selected_EOD[row][col] = float(daily_EOD[col])
-        return selected_EOD
+                selected_EOD[row][col] = float(daily_EOD[col]) #col 访问并获得OHLCV
+        return selected_EOD #转化了时间和价格特征信息的矩阵
 
     '''
         Transform the original EOD data collected from Google Finance to a
@@ -74,7 +80,7 @@ class EOD_Preprocessor:
             # select data within the begin_date
             begin_date_row = -1
             for date_index, daily_EOD in enumerate(single_EOD):
-                date_str = daily_EOD[0].replace('-05:00', '')
+                date_str = daily_EOD[0].replace('-05:00', '') #无用的时间信息直接过掉
                 date_str = date_str.replace('-04:00', '')
                 cur_date = datetime.strptime(date_str, self.date_format)
                 if cur_date > begin_date:
